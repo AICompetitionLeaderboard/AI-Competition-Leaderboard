@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Madness — Leaderboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  :root{
+    --purple:#8b5cf6; --purple-d:#6d28d9; --purple-l:#a78bfa;
+    --gold:#ffd24a; --gold-d:#c99700;
+    --silver:#dbe4ee; --bronze:#e08c4e;
+    --green:#5ff0be; --red:#fb7185; --teal:#7fe3cf;
+    --muted:#8b93c9; --text:#eef1ff;
+  }
+  html,body{height:100%;}
+  body{
+    font-family:'Rajdhani',system-ui,'Segoe UI',Arial,sans-serif; color:var(--text);
+    background:#070a22;
+    background-image:
+      radial-gradient(900px 620px at 14% -12%, rgba(139,92,246,.28), transparent 60%),
+      radial-gradient(900px 620px at 86% -12%, rgba(255,210,74,.14), transparent 60%),
+      radial-gradient(1500px 1000px at 50% 122%, rgba(59,44,140,.38), transparent 60%),
+      linear-gradient(180deg,#0b1030,#070a22);
+    min-height:100%; padding:30px 18px 70px; overflow-x:hidden;
+  }
+  .wrap{max-width:1100px;margin:0 auto;}
+  header.top{text-align:center;margin-bottom:6px;}
+  h1.title{
+    font-family:'Anton',Impact,system-ui,sans-serif;font-weight:400;
+    font-size:clamp(44px,8.5vw,88px);line-height:.92;letter-spacing:.015em;text-transform:uppercase;
+    background:linear-gradient(180deg,#ffffff 0%, #d7d0ff 42%, #b79bff 74%, #8b5cf6 100%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(0 4px 26px rgba(139,92,246,.5));margin:2px 0 4px;
+  }
+  .subtitle{font-weight:600;color:var(--muted);letter-spacing:.2em;text-transform:uppercase;font-size:.85rem;}
+
+  .tabs{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:22px 0 24px;}
+  .tab{font-family:'Rajdhani';font-weight:700;font-size:1rem;letter-spacing:.06em;text-transform:uppercase;
+    color:#c9ccf0;background:linear-gradient(180deg,rgba(40,46,102,.7),rgba(24,29,70,.7));
+    border:1px solid rgba(255,255,255,.08);padding:12px 22px;border-radius:999px;cursor:pointer;
+    transition:transform .18s, box-shadow .18s, background .18s, border-color .18s; backdrop-filter:blur(4px);}
+  .tab:hover{transform:translateY(-1px);border-color:rgba(167,139,250,.5);}
+  .tab.active{color:#fff;background:linear-gradient(180deg,var(--purple),var(--purple-d));
+    border-color:rgba(167,139,250,.85);box-shadow:0 8px 26px rgba(109,40,217,.5), inset 0 1px 0 rgba(255,255,255,.25);}
+
+  .view{display:none;animation:fade .35s ease;}
+  .view.active{display:block;}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .viewhead{text-align:center;color:var(--muted);font-weight:600;letter-spacing:.05em;font-size:.9rem;margin-bottom:16px;text-transform:uppercase;}
+
+  .rowhead{display:grid;grid-template-columns:58px 66px 1fr 60px 60px 60px 118px;gap:9px;padding:0 18px 8px;
+    color:var(--muted);font-size:.66rem;font-weight:700;letter-spacing:.13em;text-transform:uppercase;}
+  .rowhead .c{text-align:center;} .rowhead .cl{text-align:left;} .rowhead .cr{text-align:right;}
+
+  .row{position:relative;display:grid;grid-template-columns:58px 66px 1fr 60px 60px 60px 118px;
+    align-items:center;gap:9px;background:linear-gradient(180deg,rgba(30,36,86,.92),rgba(20,25,64,.92));
+    border:1px solid rgba(255,255,255,.06);border-left:4px solid var(--purple);
+    border-radius:14px;padding:12px 16px;margin-bottom:10px;overflow:hidden;transition:transform .18s, border-color .18s;}
+  .row:hover{transform:translateX(2px);border-color:rgba(167,139,250,.35);}
+  .row .prog{position:absolute;inset:0;width:0;background:linear-gradient(90deg,var(--c,rgba(139,92,246,.5)),transparent);opacity:.24;z-index:0;}
+  .row>*{position:relative;z-index:1;}
+  .row.top-1{border-left-color:var(--gold);background:linear-gradient(180deg,rgba(64,54,24,.55),rgba(28,25,52,.92));box-shadow:0 12px 36px rgba(255,210,74,.16), inset 0 1px 0 rgba(255,255,255,.06);}
+  .row.top-2{border-left-color:var(--silver);background:linear-gradient(180deg,rgba(44,50,64,.55),rgba(24,29,64,.92));}
+  .row.top-3{border-left-color:var(--bronze);background:linear-gradient(180deg,rgba(58,42,28,.5),rgba(24,26,60,.92));}
+
+  .badge{width:48px;height:48px;border-radius:12px;display:grid;place-items:center;font-family:'Anton';font-size:1.5rem;color:#0b1030;box-shadow:inset 0 -3px 8px rgba(0,0,0,.35), 0 4px 12px rgba(0,0,0,.4);}
+  .m1{background:linear-gradient(160deg,#fff2b8,#ffd24a 45%,#c99700);}
+  .m2{background:linear-gradient(160deg,#ffffff,#d7e0ec 45%,#8fa2b8);}
+  .m3{background:linear-gradient(160deg,#f6c690,#e08c4e 45%,#a1571f);color:#2a1608;}
+  .mx{background:linear-gradient(160deg,#b6a6ff,#8b5cf6 55%,#5b21b6);color:#fff;}
+
+  .mv{display:flex;justify-content:center;}
+  .chip{font-weight:700;font-size:.88rem;padding:5px 8px;border-radius:8px;letter-spacing:.02em;display:inline-flex;gap:3px;align-items:center;min-width:48px;justify-content:center;}
+  .chip.up{color:var(--green);background:rgba(52,211,153,.14);border:1px solid rgba(52,211,153,.35);}
+  .chip.down{color:var(--red);background:rgba(251,113,133,.13);border:1px solid rgba(251,113,133,.32);}
+  .chip.flat{color:#9aa1cf;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);}
+  .chip.new{color:#ffde7a;background:rgba(255,210,74,.15);border:1px solid rgba(255,210,74,.4);}
+
+  .name .tname{font-weight:700;font-size:1.24rem;line-height:1.08;display:flex;align-items:center;gap:8px;}
+  .name .tnum{font-weight:600;font-size:.74rem;color:var(--muted);letter-spacing:.05em;text-transform:uppercase;margin-top:2px;}
+  .crown{width:20px;height:16px;flex:none;filter:drop-shadow(0 2px 4px rgba(255,210,74,.6));}
+
+  .sc{display:flex;flex-direction:column;align-items:center;gap:1px;}
+  .sc .val{font-weight:700;font-size:1.05rem;}
+  .r1v{color:#c9cdf0;} .r2v{color:var(--purple-l);} .r3v{color:var(--teal);}
+  .cum{display:flex;align-items:baseline;gap:4px;justify-content:flex-end;}
+  .cum .cnum{font-family:'Anton';font-size:1.9rem;color:#fff;line-height:1;}
+  .row.top-1 .cum .cnum{color:var(--gold);text-shadow:0 0 18px rgba(255,210,74,.5);}
+
+  /* Spotlight */
+  .subtabs{display:flex;gap:8px;justify-content:center;margin:0 0 18px;}
+  .subtab{font-family:'Rajdhani';font-weight:700;font-size:.85rem;letter-spacing:.08em;text-transform:uppercase;
+    color:#c9ccf0;background:rgba(40,46,102,.6);border:1px solid rgba(255,255,255,.08);padding:8px 20px;border-radius:999px;cursor:pointer;transition:.18s;}
+  .subtab:hover{border-color:rgba(167,139,250,.5);}
+  .subtab.active{color:#fff;background:linear-gradient(180deg,var(--purple),var(--purple-d));border-color:rgba(167,139,250,.8);box-shadow:0 6px 18px rgba(109,40,217,.45);}
+  .spot-banner{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;
+    background:linear-gradient(180deg,rgba(255,210,74,.16),rgba(201,151,0,.08));border:1px solid rgba(255,210,74,.4);
+    border-radius:14px;padding:14px 18px;margin-bottom:16px;box-shadow:0 10px 30px rgba(255,210,74,.14);}
+  .spot-banner .lab{font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);font-size:.8rem;}
+  .spot-banner .nm{font-family:'Anton';font-size:1.4rem;color:#fff;}
+  .spot-banner .sc2{font-family:'Anton';font-size:1.4rem;color:var(--gold);}
+  .r2row{position:relative;display:grid;grid-template-columns:60px 1fr 180px;align-items:center;gap:12px;
+    background:linear-gradient(180deg,rgba(30,36,86,.92),rgba(20,25,64,.92));border:1px solid rgba(255,255,255,.06);
+    border-radius:14px;padding:14px 16px;margin-bottom:10px;overflow:hidden;}
+  .r2row .prog{position:absolute;inset:0;width:0;background:linear-gradient(90deg,rgba(139,92,246,.55),transparent);opacity:.22;z-index:0;}
+  .r2row>*{position:relative;z-index:1;}
+  .r2row.r2top{border:1px solid rgba(255,210,74,.5);box-shadow:0 12px 32px rgba(255,210,74,.16);}
+  .r2row .name .tname{font-weight:700;font-size:1.28rem;}
+  .r2big{text-align:right;display:flex;align-items:baseline;justify-content:flex-end;gap:5px;}
+  .r2big .cnum{font-family:'Anton';font-size:2.4rem;line-height:1;}
+  .r2big .r2max{color:var(--muted);font-weight:600;font-size:.82rem;}
+  .dns-head{color:var(--muted);font-weight:700;letter-spacing:.14em;text-transform:uppercase;font-size:.72rem;margin:20px 0 8px 6px;}
+  .r2row.dns{opacity:.5;}
+  .r2row.dns .r2big .cnum{font-size:1.6rem;color:var(--muted);}
+
+  /* Race */
+  .race-controls{display:flex;align-items:center;gap:18px;justify-content:center;margin-bottom:20px;flex-wrap:wrap;}
+  .playbtn{font-family:'Rajdhani';font-weight:700;font-size:1.15rem;letter-spacing:.08em;text-transform:uppercase;color:#fff;
+    background:linear-gradient(180deg,var(--purple),var(--purple-d));border:1px solid rgba(167,139,250,.75);
+    padding:14px 30px;border-radius:999px;cursor:pointer;box-shadow:0 10px 30px rgba(109,40,217,.5), inset 0 1px 0 rgba(255,255,255,.25);transition:transform .15s;}
+  .playbtn:hover{transform:translateY(-2px);}
+  .recbtn{background:linear-gradient(180deg,#ef4b6b,#b21e3c);border-color:rgba(251,113,133,.7);box-shadow:0 10px 30px rgba(178,30,60,.5), inset 0 1px 0 rgba(255,255,255,.25);}
+  .phasebox{display:flex;align-items:center;gap:12px;}
+  .phase{font-family:'Anton';font-size:1.4rem;letter-spacing:.04em;text-transform:uppercase;color:#fff;}
+  .phasepill{font-family:'Anton';font-size:1rem;color:#0b1030;background:linear-gradient(160deg,#fff2b8,#ffd24a 50%,#c99700);padding:4px 14px;border-radius:999px;box-shadow:0 4px 12px rgba(255,210,74,.4);}
+  .raceList{position:relative;margin:0 auto;}
+  .raceRow{position:absolute;left:0;right:0;height:44px;display:grid;grid-template-columns:44px 168px 1fr;align-items:center;gap:12px;transition:transform 1.05s cubic-bezier(.22,.61,.36,1);will-change:transform;}
+  .raceRow.snap{transition:none !important;}
+  .pos{font-family:'Anton';font-size:1.3rem;color:#cbd0ff;text-align:center;}
+  .raceRow.leader .pos{color:var(--gold);}
+  .rname{font-weight:700;font-size:1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .rname .rteam{color:var(--muted);font-weight:600;font-size:.72rem;margin-left:6px;}
+  .rtrack{position:relative;height:26px;background:rgba(255,255,255,.05);border-radius:8px;overflow:hidden;border:1px solid rgba(255,255,255,.05);}
+  .rfill{height:100%;width:0;background:linear-gradient(90deg,var(--purple-d),var(--purple-l));border-radius:8px;transition:width 1.2s cubic-bezier(.22,.61,.36,1);display:flex;align-items:center;justify-content:flex-end;box-shadow:inset 0 1px 0 rgba(255,255,255,.2);min-width:36px;}
+  .raceRow.leader .rfill{background:linear-gradient(90deg,var(--gold-d),var(--gold));}
+  .rscore{font-family:'Anton';font-size:1rem;color:#fff;padding-right:8px;text-shadow:0 1px 2px rgba(0,0,0,.5);}
+  .raceRow.leader .rscore{color:#2a2000;}
+
+  .notes{margin-top:28px;color:var(--muted);font-size:.78rem;line-height:1.6;text-align:center;border-top:1px solid rgba(255,255,255,.08);padding-top:16px;}
+  .notes b{color:#cdd2ff;}
+
+  .rec-modal{position:fixed;inset:0;background:rgba(5,7,20,.82);backdrop-filter:blur(6px);z-index:80;display:none;align-items:center;justify-content:center;padding:20px;}
+  .rec-modal.show{display:flex;}
+  .rec-card{background:linear-gradient(180deg,#151a44,#0d1130);border:1px solid rgba(167,139,250,.35);border-radius:18px;padding:20px;width:min(96vw,940px);box-shadow:0 30px 90px rgba(0,0,0,.6);}
+  .rec-title{font-family:'Anton';font-size:1.4rem;letter-spacing:.03em;text-transform:uppercase;color:#fff;text-align:center;margin-bottom:14px;}
+  .clip-canvas{width:100%;height:auto;border-radius:12px;display:block;background:#070a22;border:1px solid rgba(255,255,255,.06);}
+  .rec-status{text-align:center;color:var(--muted);font-weight:600;letter-spacing:.05em;text-transform:uppercase;font-size:.85rem;margin-top:14px;}
+  .rec-status.done{color:var(--green);}
+  .rec-actions{display:flex;justify-content:center;margin-top:14px;}
+  .rec-close{font-family:'Rajdhani';font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#fff;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);padding:10px 24px;border-radius:999px;cursor:pointer;}
+  .rec-close:hover{background:rgba(255,255,255,.14);}
+  #confetti{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:60;}
+
+  @media (max-width:700px){
+    .rowhead,.row{grid-template-columns:46px 56px 1fr 46px 46px 46px 84px;gap:6px;padding-left:11px;padding-right:11px;}
+    .badge{width:36px;height:36px;font-size:1.05rem;}
+    .name .tname{font-size:.98rem;} .cum .cnum{font-size:1.4rem;} .sc .val{font-size:.9rem;}
+    .chip{min-width:38px;font-size:.74rem;padding:4px 5px;}
+    .r2row{grid-template-columns:48px 1fr 130px;} .r2big .cnum{font-size:1.9rem;}
+    .raceRow{grid-template-columns:36px 116px 1fr;}
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="top">
+      <h1 class="title">AI&nbsp;Madness</h1>
+      <div class="subtitle">Leaderboard · Through Round 3</div>
+    </header>
+
+    <nav class="tabs">
+      <button class="tab active" data-view="standings">Overall Standings</button>
+      <button class="tab" data-view="spot">Round Spotlight</button>
+      <button class="tab" data-view="race">The Race</button>
+    </nav>
+
+    <section id="view-standings" class="view active">
+      <div class="viewhead">Overall standings after Round 3 · Total = R1 + R2 + R3</div>
+      <div class="rowhead">
+        <div class="c">Rank</div><div class="c">Move</div><div class="cl">Team</div>
+        <div class="c">R1</div><div class="c">R2</div><div class="c">R3</div><div class="cr">Total</div>
+      </div>
+      <div id="standingsList"></div>
+    </section>
+
+    <section id="view-spot" class="view">
+      <div class="viewhead">Each round on its own · ranked on that round alone</div>
+      <div class="subtabs">
+        <button class="subtab" data-round="1">Round 1</button>
+        <button class="subtab" data-round="2">Round 2</button>
+        <button class="subtab active" data-round="3">Round 3</button>
+      </div>
+      <div id="spotBanner"></div>
+      <div id="spotList"></div>
+    </section>
+
+    <section id="view-race" class="view">
+      <div class="viewhead">Watch the standings shift across all three rounds</div>
+      <div class="race-controls">
+        <button id="playBtn" class="playbtn">▶ Play the race</button>
+        <button id="recordBtn" class="playbtn recbtn">● Record clip</button>
+        <div class="phasebox">
+          <span class="phase" id="phaseLabel">After Round 1</span>
+          <span class="phasepill" id="phasePill">R1</span>
+        </div>
+      </div>
+      <div id="raceList" class="raceList"></div>
+    </section>
+
+    <div class="notes" id="notes"></div>
+  </div>
+
+  <div id="recModal" class="rec-modal">
+    <div class="rec-card">
+      <div class="rec-title">Rendering your race clip</div>
+      <canvas id="clipCanvas" width="1280" height="720" class="clip-canvas"></canvas>
+      <div class="rec-status" id="recStatus">Recording…</div>
+      <div class="rec-actions"><button id="recClose" class="rec-close">Close</button></div>
+    </div>
+  </div>
+
+  <canvas id="confetti"></canvas>
+
+<script>
+(function(){
+  "use strict";
+
+  // r1/r2/r3 are the per-round scores, weighted (out of 60 / 90 / 120).
+  var TEAMS = [
+    {num:12, name:"Subway Tokenizers",            r1:59, r2:88.5, r3:106.8, r3raw:89},
+    {num:11, name:"Cache Me If You Can",          r1:53, r2:84,   r3:105.6, r3raw:88},
+    {num:14, name:"Yopp Tier Intelligence (YTI)", r1:57, r2:79.5, r3:106.8, r3raw:89},
+    {num:8,  name:"Ctrl Alt Elite",               r1:51, r2:79.5, r3:104.4, r3raw:87},
+    {num:4,  name:"PROMPTERS",                    r1:47, r2:81,   r3:99.6,  r3raw:83},
+    {num:9,  name:"The A Team",                   r1:46, r2:73.5, r3:108.0, r3raw:90},
+    {num:10, name:"The AI Ninjas",                r1:39, r2:61.5, r3:null,  r3raw:null},
+    {num:13, name:"Breaking Bots",                r1:46, r2:51,   r3:98.4,  r3raw:82},
+    {num:15, name:"Blue Devil's Advocates",       r1:50, r2:70.5, r3:25.2,  r3raw:21},
+    {num:7,  name:"Transformers",                 r1:55, r2:null, r3:null,  r3raw:null},
+    {num:6,  name:"brAInstorm",                   r1:51, r2:null, r3:103.2, r3raw:86}
+  ];
+  var MAX = 270; // 60 + 90 + 120 available through Round 3
+
+  function cum(t){ return (t.r1||0)+(t.r2||0)+(t.r3||0); }
+  function fmt(v){ if(v===null||v===undefined) return "\u2014"; return Number.isInteger(v)?String(v):v.toFixed(1); }
+  function fmt2(v){ return Number.isInteger(v)?String(v):v.toFixed(1); }
+
+  var finalSorted = TEAMS.slice().sort(function(a,b){ return cum(b)-cum(a); });
+  var finalRank = {}; finalSorted.forEach(function(t,i){ finalRank[t.num]=i+1; });
+
+  // Baseline for movement = official end-of-Round-2 standings (what the last board showed).
+  var R2ORDER = [12,11,14,8,4,9,10,13,15,7,6];
+  var r2Rank = {}; R2ORDER.forEach(function(n,i){ r2Rank[n]=i+1; });
+  function movement(t){ return r2Rank[t.num]-finalRank[t.num]; }
+
+  var crownSVG='<svg class="crown" viewBox="0 0 24 20"><path d="M2 6l4 4 6-8 6 8 4-4-2 12H4z" fill="#ffd24a"/></svg>';
+  function medalClass(r){ return r<=3?("m"+r):"mx"; }
+  function moveChip(mv){
+    if(mv>0) return '<span class="chip up">\u25B2 '+mv+'</span>';
+    if(mv<0) return '<span class="chip down">\u25BC '+(-mv)+'</span>';
+    return '<span class="chip flat">\u2014</span>';
+  }
+
+  // ---- Standings ----
+  document.getElementById("standingsList").innerHTML = finalSorted.map(function(t){
+    var rank=finalRank[t.num], c=cum(t);
+    var col = rank===1?'rgba(255,210,74,.55)':rank===2?'rgba(219,228,238,.4)':rank===3?'rgba(224,140,78,.45)':'rgba(139,92,246,.5)';
+    return '<div class="row '+(rank<=3?('top top-'+rank):'')+'">'
+      + '<div class="prog" style="width:'+(c/MAX*100)+'%;--c:'+col+'"></div>'
+      + '<div class="badge '+medalClass(rank)+'">'+rank+'</div>'
+      + '<div class="mv">'+moveChip(movement(t))+'</div>'
+      + '<div class="name"><div class="tname">'+(rank===1?crownSVG:'')+t.name+'</div>'
+      +   '<div class="tnum">Team '+t.num+(rank<=3?(' \u00B7 '+["1st","2nd","3rd"][rank-1]+' place'):'')+'</div></div>'
+      + '<div class="sc"><span class="val r1v">'+fmt(t.r1)+'</span></div>'
+      + '<div class="sc"><span class="val r2v">'+fmt(t.r2)+'</span></div>'
+      + '<div class="sc"><span class="val r3v">'+fmt(t.r3)+'</span></div>'
+      + '<div class="cum"><span class="cnum" data-to="'+c+'">0</span></div>'
+      + '</div>';
+  }).join("");
+
+  // ---- Round Spotlight (parameterized) ----
+  var ROUND_CFG = {
+    1:{field:"r1",max:60,label:"Round 1",colorClass:"r1v"},
+    2:{field:"r2",max:90,label:"Round 2",colorClass:"r2v"},
+    3:{field:"r3",max:120,label:"Round 3",colorClass:"r3v"}
+  };
+  var currentSpotRound = 3;
+
+  function renderSpotlight(round){
+    var cfg=ROUND_CFG[round], fld=cfg.field;
+    var have=TEAMS.filter(function(t){return t[fld]!=null;}).sort(function(a,b){return b[fld]-a[fld];});
+    var none=TEAMS.filter(function(t){return t[fld]==null;});
+    var rk={}, pv=null, pk=0; have.forEach(function(t,i){ if(t[fld]!==pv){pk=i+1;pv=t[fld];} rk[t.num]=pk; });
+    var top=have[0];
+    var topExtra = "";
+    document.getElementById("spotBanner").innerHTML =
+      '<div class="spot-banner"><span class="lab">\u2605 Top '+cfg.label+' score</span>'
+      + '<span class="nm">'+top.name+'</span>'
+      + '<span class="sc2">'+fmt(top[fld])+' / '+cfg.max+topExtra+'</span></div>';
+    var html = have.map(function(t){
+      var rank=rk[t.num];
+      var meta='Team '+t.num+' \u00B7 Overall #'+finalRank[t.num]+' \u00B7 '+fmt(cum(t))+' total';
+      if(round===1 && t.num===15) meta+=' \u00B7 made-up';
+      var numColor = rank===1 ? 'style="color:var(--gold);text-shadow:0 0 20px rgba(255,210,74,.45)"' : '';
+      return '<div class="r2row '+(rank===1?'r2top':'')+'">'
+        + '<div class="prog" style="width:'+(t[fld]/cfg.max*100)+'%"></div>'
+        + '<div class="badge '+medalClass(rank)+'">'+rank+'</div>'
+        + '<div class="name"><div class="tname">'+t.name+'</div><div class="tnum">'+meta+'</div></div>'
+        + '<div class="r2big"><span class="cnum '+cfg.colorClass+'" '+numColor+' data-to="'+t[fld]+'">0</span><span class="r2max">/ '+cfg.max+'</span></div>'
+        + '</div>';
+    }).join("");
+    if(none.length){
+      html += '<div class="dns-head">No '+cfg.label+' submission</div>';
+      html += none.map(function(t){
+        return '<div class="r2row dns"><div class="badge mx">\u2013</div>'
+          + '<div class="name"><div class="tname">'+t.name+'</div><div class="tnum">Team '+t.num+' \u00B7 '+fmt(cum(t))+' total</div></div>'
+          + '<div class="r2big"><span class="cnum">\u2014</span></div></div>';
+      }).join("");
+    }
+    document.getElementById("spotList").innerHTML = html;
+  }
+
+  // ---- Race (three phases) ----
+  var PHASE_LABELS=["After Round 1","After Round 2","After Round 3"];
+  var PHASE_PILLS=["R1","R2","R3"];
+  function phaseCum(t, ph){
+    if(t.num===15){ // Blue Devil's Advocates: R1 was a make-up recorded at Round 3
+      if(ph===0) return 0;
+      if(ph===1) return t.r2||0;
+      return (t.r1||0)+(t.r2||0)+(t.r3||0);
+    }
+    var c=(t.r1||0);
+    if(ph>=1) c+=(t.r2||0);
+    if(ph>=2) c+=(t.r3||0);
+    return c;
+  }
+  function phaseOrder(ph){
+    return TEAMS.slice().sort(function(a,b){
+      var d=phaseCum(b,ph)-phaseCum(a,ph);
+      if(Math.abs(d)>1e-9) return d;
+      return cum(b)-cum(a);
+    });
+  }
+  var slots=[{},{},{}];
+  [0,1,2].forEach(function(ph){ phaseOrder(ph).forEach(function(t,i){ slots[ph][t.num]=i; }); });
+
+  var ROWH=50;
+  var raceList=document.getElementById("raceList");
+  raceList.style.height=(TEAMS.length*ROWH)+"px";
+  var rowByNum={};
+  TEAMS.forEach(function(t){
+    var d=document.createElement("div"); d.className="raceRow"; d.style.transform="translateY(0px)";
+    d.innerHTML='<div class="pos">\u2013</div><div class="rname">'+t.name+'<span class="rteam">T'+t.num+'</span></div>'
+      +'<div class="rtrack"><div class="rfill"><span class="rscore">0</span></div></div>';
+    raceList.appendChild(d); rowByNum[t.num]=d;
+  });
+
+  function countTo(el,to,dur){
+    var from=parseFloat((el.textContent||"0").replace(/[^0-9.]/g,""))||0;
+    if(dur<=0){ el.textContent=fmt2(to); return; }
+    var t0=performance.now();
+    function step(now){ var p=Math.min(1,(now-t0)/dur); var e=1-Math.pow(1-p,3); var v=from+(to-from)*e;
+      el.textContent = p<1?String(Math.round(v)):fmt2(to); if(p<1) requestAnimationFrame(step); }
+    requestAnimationFrame(step);
+  }
+  function setPhase(ph, anim){
+    phaseOrder(ph).forEach(function(t,i){
+      var row=rowByNum[t.num]; row.style.transform="translateY("+(i*ROWH)+"px)";
+      var val=phaseCum(t,ph); row.querySelector(".rfill").style.width=(val/MAX*100)+"%";
+      row.querySelector(".pos").textContent=i+1; row.classList.toggle("leader", i===0);
+      countTo(row.querySelector(".rscore"), val, anim?1150:0);
+    });
+  }
+
+  var playBtn=document.getElementById("playBtn");
+  var phaseLabel=document.getElementById("phaseLabel");
+  var phasePill=document.getElementById("phasePill");
+  var raceRunning=false;
+  function labelPhase(i){ phaseLabel.textContent=PHASE_LABELS[i]; phasePill.textContent=PHASE_PILLS[i]; }
+  function resetRace(){
+    var rows=raceList.querySelectorAll(".raceRow"); rows.forEach(function(r){ r.classList.add("snap"); });
+    setPhase(0,false); void raceList.offsetWidth; rows.forEach(function(r){ r.classList.remove("snap"); });
+    labelPhase(0); playBtn.textContent="\u25B6 Play the race"; raceRunning=false;
+  }
+  function playAll(){
+    if(raceRunning) return; raceRunning=true; resetRace();
+    setTimeout(function(){ setPhase(1,true); labelPhase(1); }, 800);
+    setTimeout(function(){ setPhase(2,true); labelPhase(2); }, 800+1850);
+    setTimeout(function(){ championConfetti(); raceRunning=false; playBtn.textContent="\u21BB Replay"; }, 800+1850+1650);
+  }
+  playBtn.addEventListener("click", playAll);
+
+  // ---- Tabs ----
+  var tabs=document.querySelectorAll(".tab");
+  var views={standings:document.getElementById("view-standings"),spot:document.getElementById("view-spot"),race:document.getElementById("view-race")};
+  function animateNumbers(sec){ sec.querySelectorAll(".cnum").forEach(function(el){ var to=parseFloat(el.dataset.to); if(!isNaN(to)) countTo(el,to,1100); }); }
+  function showView(name){
+    tabs.forEach(function(b){ b.classList.toggle("active", b.dataset.view===name); });
+    Object.keys(views).forEach(function(k){ views[k].classList.toggle("active", k===name); });
+    if(name==="standings") animateNumbers(views.standings);
+    if(name==="spot") animateNumbers(views.spot);
+    if(name==="race") resetRace();
+  }
+  tabs.forEach(function(b){ b.addEventListener("click", function(){ showView(b.dataset.view); }); });
+
+  var subtabs=document.querySelectorAll(".subtab");
+  subtabs.forEach(function(b){ b.addEventListener("click", function(){
+    currentSpotRound=parseInt(b.dataset.round,10);
+    subtabs.forEach(function(x){ x.classList.toggle("active", x===b); });
+    renderSpotlight(currentSpotRound); animateNumbers(views.spot);
+  }); });
+
+  // ---- Notes ----
+  document.getElementById("notes").innerHTML =
+    '<b>How to read this:</b> Move arrows compare each team\u2019s overall rank against the end-of-Round-2 board. '
+    + 'Ties share a rank. \u201C\u2014\u201D means no submission that round. '
+    + 'Per-round scores are weighted out of 60 (R1), 90 (R2), and 120 (R3). '
+    + '<br>Score bars are scaled to the <b>270 points available through Round 3</b>. '
+    + 'Blue Devil\u2019s Advocates\u2019 Round 1 score of 50 was a make-up and is included in all totals; in the race it folds in at Round 3, when it was recorded.';
+
+  // ---- Confetti ----
+  var cvs=document.getElementById("confetti"); var ctx=cvs.getContext("2d");
+  var parts=[], running=false; var COLORS=["#ffd24a","#8b5cf6","#a78bfa","#e2e8f0","#5ff0be","#fb7185","#ffffff"];
+  function resize(){ cvs.width=window.innerWidth; cvs.height=window.innerHeight; }
+  window.addEventListener("resize", resize); resize();
+  function addBurst(cx,cy,count){ for(var i=0;i<count;i++){ parts.push({x:cx,y:cy,vx:(Math.random()-0.5)*10,vy:Math.random()*-9-4,g:0.28,size:4+Math.random()*6,rot:Math.random()*6.28,vr:(Math.random()-0.5)*0.3,color:COLORS[(Math.random()*COLORS.length)|0],life:1,fade:0.006+Math.random()*0.008}); } if(!running){ running=true; requestAnimationFrame(loop); } }
+  function loop(){ ctx.clearRect(0,0,cvs.width,cvs.height); for(var i=parts.length-1;i>=0;i--){ var p=parts[i]; p.vy+=p.g;p.x+=p.vx;p.y+=p.vy;p.rot+=p.vr;p.life-=p.fade; if(p.life<=0||p.y>cvs.height+30){ parts.splice(i,1); continue; } ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.rot);ctx.globalAlpha=Math.max(0,p.life);ctx.fillStyle=p.color;ctx.fillRect(-p.size/2,-p.size/2,p.size,p.size*0.6);ctx.restore(); } if(parts.length){ requestAnimationFrame(loop); } else { running=false; } }
+  function championConfetti(){ var W=cvs.width,H=cvs.height; addBurst(W*0.5,H*0.30,90); setTimeout(function(){ addBurst(W*0.18,H*0.28,55); addBurst(W*0.82,H*0.28,55); },180); }
+
+  // ---- Record clip (canvas -> MediaRecorder), three phases ----
+  var H0=600,T01=1500,H1=650,T12=1500,H2=2300, TOTAL=H0+T01+H1+T12+H2;
+  var CLIPCOLORS=["#ffd24a","#8b5cf6","#a78bfa","#e2e8f0","#5ff0be","#fb7185","#ffffff"];
+  var clipParts=[], confettiStarted=false;
+  function easeInOut(x){ return x<0.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2; }
+  function roundRect(c,x,y,w,h,r){ r=Math.min(r,h/2,w/2); c.beginPath(); c.moveTo(x+r,y); c.arcTo(x+w,y,x+w,y+h,r); c.arcTo(x+w,y+h,x,y+h,r); c.arcTo(x,y+h,x,y,r); c.arcTo(x,y,x+w,y,r); c.closePath(); }
+  function fitText(c,str,maxW){ if(c.measureText(str).width<=maxW) return str; var s=str; while(s.length>1 && c.measureText(s+"\u2026").width>maxW){ s=s.slice(0,-1); } return s+"\u2026"; }
+  function spawnClipConfetti(){ clipParts=[]; for(var i=0;i<150;i++){ clipParts.push({x:640+(Math.random()-0.5)*980,y:-20-Math.random()*160,vx:(Math.random()-0.5)*3.2,vy:2+Math.random()*4.2,g:0.05,size:5+Math.random()*7,rot:Math.random()*6.28,vr:(Math.random()-0.5)*0.32,color:CLIPCOLORS[(Math.random()*CLIPCOLORS.length)|0]}); } }
+  function drawClipConfetti(c){ for(var i=0;i<clipParts.length;i++){ var p=clipParts[i]; p.vy+=p.g;p.x+=p.vx;p.y+=p.vy;p.rot+=p.vr; c.save();c.translate(p.x,p.y);c.rotate(p.rot);c.fillStyle=p.color;c.fillRect(-p.size/2,-p.size/2,p.size,p.size*0.62);c.restore(); } }
+
+  function segment(el){
+    if(el<H0) return {a:0,b:0,p:0,lab:"AFTER ROUND 1"};
+    if(el<H0+T01) return {a:0,b:1,p:(el-H0)/T01,lab:"BANKING ROUND 2\u2026"};
+    if(el<H0+T01+H1) return {a:1,b:1,p:0,lab:"AFTER ROUND 2"};
+    if(el<H0+T01+H1+T12) return {a:1,b:2,p:(el-(H0+T01+H1))/T12,lab:"BANKING ROUND 3\u2026"};
+    return {a:2,b:2,p:0,lab:"AFTER ROUND 3"};
+  }
+  function drawScene(c, el){
+    var W=1280,H=720; var sg=segment(el); var e=easeInOut(sg.p);
+    var g=c.createLinearGradient(0,0,0,H); g.addColorStop(0,"#0b1030"); g.addColorStop(1,"#070a22"); c.fillStyle=g; c.fillRect(0,0,W,H);
+    var rg=c.createRadialGradient(W*0.5,-40,40,W*0.5,-40,720); rg.addColorStop(0,"rgba(139,92,246,0.30)"); rg.addColorStop(1,"rgba(139,92,246,0)"); c.fillStyle=rg; c.fillRect(0,0,W,300);
+    c.textBaseline="alphabetic"; c.textAlign="left"; c.fillStyle="#ffffff"; c.font="62px Anton, Impact, sans-serif"; c.fillText("AI MADNESS",56,76);
+    c.fillStyle="#a78bfa"; c.font="600 19px Rajdhani, sans-serif"; c.fillText("LEADERBOARD RACE \u00B7 ROUND 1 \u2192 2 \u2192 3",60,100);
+    c.textAlign="right"; c.fillStyle="#ffd24a"; c.font="42px Anton, Impact, sans-serif"; c.fillText(sg.lab,W-56,80); c.textAlign="left";
+    var TOP=150,BOT=692,rowH=(BOT-TOP)/TEAMS.length; var barX=486,barW=(W-56)-barX;
+    var cur=TEAMS.map(function(t){ var s=slots[sg.a][t.num]+(slots[sg.b][t.num]-slots[sg.a][t.num])*e; var va=phaseCum(t,sg.a),vb=phaseCum(t,sg.b); return {t:t,s:s,v:va+(vb-va)*e}; });
+    var byslot=cur.slice().sort(function(a,b){return a.s-b.s;}); var rankOf={}; byslot.forEach(function(o,i){ rankOf[o.t.num]=i+1; });
+    cur.forEach(function(o){
+      var t=o.t, cy=TOP+o.s*rowH+rowH/2, rank=rankOf[t.num], leader=(rank===1);
+      var pcol=rank===1?"#ffd24a":rank===2?"#dbe4ee":rank===3?"#e08c4e":"#c7ccf5";
+      c.fillStyle=pcol; c.font="30px Anton, Impact, sans-serif"; c.textAlign="center"; c.textBaseline="middle"; c.fillText(String(rank),44,cy);
+      c.textAlign="left"; c.fillStyle="#eef1ff"; c.font="700 22px Rajdhani, sans-serif"; c.fillText(fitText(c,t.name,barX-92-72),92,cy);
+      var trkY=cy-13; c.fillStyle="rgba(255,255,255,0.06)"; roundRect(c,barX,trkY,barW,26,8); c.fill();
+      var fw=Math.max(6,(o.v/MAX)*barW); var fg=c.createLinearGradient(barX,0,barX+fw,0);
+      if(leader){ fg.addColorStop(0,"#c99700"); fg.addColorStop(1,"#ffd24a"); } else { fg.addColorStop(0,"#6d28d9"); fg.addColorStop(1,"#a78bfa"); }
+      c.fillStyle=fg; roundRect(c,barX,trkY,fw,26,8); c.fill();
+      var st=(sg.p>=1||(sg.a===sg.b))?fmt2(o.v):String(Math.round(o.v));
+      c.font="20px Anton, Impact, sans-serif"; c.textBaseline="middle";
+      if(fw>64){ c.textAlign="right"; c.fillStyle=leader?"#2a2000":"#ffffff"; c.fillText(st,barX+fw-8,cy); }
+      else { c.textAlign="left"; c.fillStyle="#c7ccf5"; c.fillText(st,barX+fw+8,cy); }
+    });
+    if(el>=H0+T01+H1+T12){ if(!confettiStarted){ confettiStarted=true; spawnClipConfetti(); } drawClipConfetti(c); }
+  }
+
+  function pickMime(){ if(typeof MediaRecorder==="undefined"||!MediaRecorder.isTypeSupported) return null;
+    var types=["video/mp4;codecs=avc1.42E01E","video/mp4","video/webm;codecs=vp9","video/webm;codecs=vp8","video/webm"];
+    for(var i=0;i<types.length;i++){ if(MediaRecorder.isTypeSupported(types[i])) return types[i]; } return ""; }
+
+  var recModal=document.getElementById("recModal"); var clipCanvas=document.getElementById("clipCanvas");
+  var recStatus=document.getElementById("recStatus"); var recBtn=document.getElementById("recordBtn"); var recClose=document.getElementById("recClose");
+  var recording=false, activeRec=null;
+  recClose.addEventListener("click", function(){ if(activeRec&&recording){ try{activeRec.stop();}catch(e){} } recModal.classList.remove("show"); });
+  function startRecording(){
+    var c=clipCanvas.getContext("2d"); confettiStarted=false; clipParts=[];
+    recStatus.classList.remove("done"); recStatus.textContent="Recording\u2026 (about 7 seconds)"; recModal.classList.add("show");
+    if(!clipCanvas.captureStream){ recStatus.textContent="This browser can't record. Try Chrome or Edge."; recording=false; return; }
+    var stream=clipCanvas.captureStream(60); var mime=pickMime();
+    if(mime===null){ recStatus.textContent="This browser can't record video. Try Chrome or Edge."; recording=false; return; }
+    var opts={videoBitsPerSecond:8000000}; if(mime) opts.mimeType=mime;
+    var rec; try{ rec=new MediaRecorder(stream,opts); }catch(e){ try{ rec=new MediaRecorder(stream); }catch(e2){ recStatus.textContent="Recording not supported here."; recording=false; return; } }
+    activeRec=rec; var chunks=[];
+    rec.ondataavailable=function(ev){ if(ev.data&&ev.data.size) chunks.push(ev.data); };
+    rec.onstop=function(){ recording=false; var type=rec.mimeType||mime||"video/webm"; var blob=new Blob(chunks,{type:type});
+      var ext=type.indexOf("mp4")>=0?"mp4":"webm"; var url=URL.createObjectURL(blob);
+      var a=document.createElement("a"); a.href=url; a.download="AI_Madness_Race_v2."+ext; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function(){ URL.revokeObjectURL(url); },5000);
+      recStatus.classList.add("done"); recStatus.textContent="Saved AI_Madness_Race_v2."+ext+" \u2014 check your Downloads"; };
+    rec.start(); var startTs=null;
+    function frame(ts){ if(startTs===null) startTs=ts; var el=ts-startTs; drawScene(c,el); if(el<TOTAL+250){ requestAnimationFrame(frame); } else { try{rec.stop();}catch(e){} } }
+    requestAnimationFrame(frame);
+  }
+  recBtn.addEventListener("click", function(){ if(recording) return; recording=true; var ready=(document.fonts&&document.fonts.ready)?document.fonts.ready:Promise.resolve(); ready.then(function(){ startRecording(); }); });
+
+  // ---- Init ----
+  renderSpotlight(currentSpotRound);
+  animateNumbers(views.standings);
+  setTimeout(championConfetti, 400);
+  setPhase(0,false);
+})();
+</script>
+</body>
+</html>
