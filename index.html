@@ -194,6 +194,15 @@
     .r2row{grid-template-columns:48px 1fr 120px;} .r2big .cnum{font-size:1.8rem;}
     .raceRow{grid-template-columns:34px 104px 1fr;}
   }
+  .sec-label{width:100%;color:var(--muted);font-weight:700;letter-spacing:.16em;text-transform:uppercase;font-size:.74rem;border-bottom:1px solid rgba(255,255,255,.09);padding-bottom:6px;margin-top:4px;}
+  .cc.award-prompt{border-color:rgba(167,139,250,.5);background:linear-gradient(180deg,rgba(48,38,86,.55),rgba(22,24,58,.94));}
+  .cc.award-creative{border-color:rgba(240,120,60,.5);background:linear-gradient(180deg,rgba(70,40,24,.5),rgba(22,24,58,.94));}
+  .medal.awp{background:linear-gradient(160deg,#b6a6ff,#8b5cf6 55%,#5b21b6);color:#fff;font-family:'Segoe UI Symbol',system-ui,sans-serif;}
+  .medal.awc{background:linear-gradient(160deg,#ffb27a,#f2681f 55%,#c24608);color:#fff;font-family:'Segoe UI Symbol',system-ui,sans-serif;}
+  .award-note{color:var(--muted);font-weight:600;font-size:.78rem;line-height:1.35;margin-top:6px;white-space:normal;max-width:300px;}
+  .mtag{display:inline-flex;align-items:center;gap:4px;font-family:'Rajdhani';font-weight:700;font-size:.66rem;letter-spacing:.06em;text-transform:uppercase;color:#fff;background:linear-gradient(180deg,#f2681f,#c24608);border:1px solid rgba(240,120,60,.6);padding:3px 9px;border-radius:999px;box-shadow:0 3px 10px rgba(194,70,8,.35);}
+  .mc{color:#ff9a5a;font-weight:700;}
+  .bp{color:#b8a6ff;font-weight:700;}
 </style>
 </head>
 <body>
@@ -212,7 +221,7 @@
 
     <section id="view-champions" class="view active">
       <div class="champ-head">Winners' Circle</div>
-      <div class="champ-sub">Top five finishers · performance points awarded</div>
+      <div class="champ-sub">Top five finishers · 20,000 recognition points</div>
       <div id="champs" class="champs"></div>
     </section>
 
@@ -249,8 +258,6 @@
       </div>
       <div id="raceList" class="raceList"></div>
     </section>
-
-    <div class="notes" id="notes"></div>
   </div>
 
   <div id="recModal" class="rec-modal">
@@ -295,6 +302,9 @@
 
   var PERF={1:10000,2:5000,3:2000,4:2000,5:1000};
   function perfOf(t){ return PERF[finalRank[t.num]]||0; }
+  function isWinner(t){ return !t.withdrew && finalRank[t.num]<=5; }
+  var TITLES={8:"Most Creative",6:"Best Prompt"};
+  function titleOf(t){ return TITLES[t.num]||null; }
   function comma(n){ return n.toLocaleString("en-US"); }
 
   // movement baseline = end-of-Round-3 standings
@@ -304,41 +314,43 @@
 
   var crownSVG='<svg class="crown" viewBox="0 0 24 20"><path d="M2 6l4 4 6-8 6 8 4-4-2 12H4z" fill="#ffd24a"/></svg>';
   var rowCrownSVG='<svg class="rowcrown" viewBox="0 0 24 20"><path d="M2 6l4 4 6-8 6 8 4-4-2 12H4z" fill="#ffd24a"/></svg>';
-  function medalClass(rank,withd){ if(withd) return "md"; if(rank<=3) return "m"+rank; if(rank<=5) return "mw"; return "mx"; }
+  function medalClass(rank,withd,winner){ if(withd) return "md"; if(rank<=3) return "m"+rank; if(winner) return "mw"; return "mx"; }
   var PLACE={1:"1st place",2:"2nd place",3:"3rd place",4:"4th place",5:"5th place"};
 
   // ---- Champions ----
   document.getElementById("champs").innerHTML = ranked.slice(0,5).map(function(t){
     var r=finalRank[t.num];
-    var lab = r===1?"Champion":r===2?"Runner-up":PLACE[r];
+    var lab = r===1?"Champion":r===2?"Runner-Up":PLACE[r];
+    var tag = (t.num===8)?' <span class="mtag">★ Most Creative</span>':'';
     return '<div class="cc rank-'+r+'">'
-      + '<div class="medal '+medalClass(r,false)+'">'+r+'</div>'
+      + '<div class="medal '+medalClass(r,false,true)+'">'+r+'</div>'
       + '<div class="champ-main"><div class="lab">'+lab+'</div>'
-      +   '<div class="cname">'+(r===1?crownSVG:'')+t.name+'</div>'
+      +   '<div class="cname">'+(r===1?crownSVG:'')+t.name+tag+'</div>'
       +   '<div class="cmem">'+(t.members||("Team "+t.num))+'</div></div>'
       + '<div class="cright"><div class="cscore"><span data-to="'+cum(t)+'">0</span><small>/ 420 pts</small></div>'
-      +   '<div class="cpp">\u2605 <span data-pp="'+perfOf(t)+'">0</span> performance pts</div></div>'
+      +   '<div class="cpp">★ <span data-pp="'+perfOf(t)+'">0</span> recognition pts</div></div>'
       + '</div>';
   }).join("");
 
   // ---- Standings ----
   document.getElementById("standingsList").innerHTML = displayOrder.map(function(t){
-    var rank=finalRank[t.num], c=cum(t), win=(!t.withdrew && rank<=5);
+    var rank=finalRank[t.num], c=cum(t), win=isWinner(t);
     var cls="row"+(win?" win":"")+(rank<=3&&!t.withdrew?(" top-"+rank):"")+(t.withdrew?" withdrew":"");
     var col = t.withdrew?'rgba(120,127,170,.4)':rank===1?'rgba(255,210,74,.55)':rank===2?'rgba(219,228,238,.4)':rank===3?'rgba(224,140,78,.45)':win?'rgba(255,210,74,.4)':'rgba(139,92,246,.5)';
     var mv=movement(t), mvHtml;
     if(t.withdrew) mvHtml='<span class="chip out">out</span>';
-    else if(mv>0) mvHtml='<span class="chip up">\u25B2 '+mv+'</span>';
-    else if(mv<0) mvHtml='<span class="chip down">\u25BC '+(-mv)+'</span>';
-    else mvHtml='<span class="chip flat">\u2014</span>';
+    else if(mv>0) mvHtml='<span class="chip up">▲ '+mv+'</span>';
+    else if(mv<0) mvHtml='<span class="chip down">▼ '+(-mv)+'</span>';
+    else mvHtml='<span class="chip flat">—</span>';
     var meta;
-    if(t.withdrew) meta='Team '+t.num+' \u00B7 withdrew';
-    else if(rank<=5) meta='Team '+t.num+' \u00B7 '+PLACE[rank]+' \u00B7 <span class="pp">\u2605 '+comma(perfOf(t))+' pts</span>';
-    else if(t.skipped4) meta='Team '+t.num+' \u00B7 skipped Round 4';
+    if(t.withdrew) meta='Team '+t.num+' · withdrew';
+    else if(rank<=5) meta='Team '+t.num+' · '+PLACE[rank]+(t.num===8?' · <span class="mc">★ Most Creative</span>':'')+' · <span class="pp">★ '+comma(perfOf(t))+' pts</span>';
+    else if(t.num===6) meta='Team '+t.num+' · <span class="bp">★ Best Prompt</span>';
+    else if(t.skipped4) meta='Team '+t.num+' · skipped Round 4';
     else meta='Team '+t.num;
     return '<div class="'+cls+'">'
       + '<div class="prog" style="width:'+(c/MAX*100)+'%;--c:'+col+'"></div>'
-      + '<div class="badge '+medalClass(rank,t.withdrew)+'">'+(t.withdrew?"\u2014":rank)+'</div>'
+      + '<div class="badge '+medalClass(rank,t.withdrew,win)+'">'+(t.withdrew?"—":rank)+'</div>'
       + '<div class="mv">'+mvHtml+'</div>'
       + '<div class="name"><div class="tname">'+(rank===1&&!t.withdrew?rowCrownSVG:'')+t.name+'</div><div class="tnum">'+meta+'</div></div>'
       + '<div class="sc"><span class="val r1v">'+fmt(t.r1)+'</span></div>'
@@ -377,7 +389,7 @@
       var numColor = rank===1 ? 'style="color:var(--gold);text-shadow:0 0 20px rgba(255,210,74,.45)"' : '';
       return '<div class="r2row '+(rank===1?'r2top':'')+'">'
         + '<div class="prog" style="width:'+(t[fld]/cfg.max*100)+'%"></div>'
-        + '<div class="badge '+medalClass(rank,false)+'">'+rank+'</div>'
+        + '<div class="badge '+medalClass(rank,false,rank<=5)+'">'+rank+'</div>'
         + '<div class="name"><div class="tname">'+t.name+'</div><div class="tnum">'+meta+'</div></div>'
         + '<div class="r2big"><span class="cnum '+cfg.colorClass+'" '+numColor+' data-to="'+t[fld]+'">0</span><span class="r2max">/ '+cfg.max+'</span></div>'
         + '</div>';
@@ -498,14 +510,6 @@
     renderSpotlight(currentSpotRound); animateNumbers(views.spot);
   }); });
 
-  // ---- Notes ----
-  document.getElementById("notes").innerHTML =
-    '<b>Final board, all four rounds.</b> Move arrows compare each team\u2019s overall rank against the end-of-Round-3 board. '
-    + 'Ties share a rank. \u201C\u2014\u201D means no submission that round. '
-    + 'Per-round scores are weighted out of 60 (R1), 90 (R2), 120 (R3), and 150 (R4); bars are scaled to the 420 points across all four rounds. '
-    + '<br>The top five earn performance points (10,000 / 5,000 / 2,000 / 2,000 / 1,000), shown in gold. '
-    + 'Cache Me If You Can, Breaking Bots, and Blue Devil\u2019s Advocates skipped Round 4 and keep their standing; The AI Ninjas and Transformers withdrew and are unranked. '
-    + 'Blue Devil\u2019s Advocates\u2019 Round 1 score (50) was a make-up included in all totals.';
 
   // ---- Confetti ----
   var cvs=document.getElementById("confetti"); var ctx=cvs.getContext("2d");
