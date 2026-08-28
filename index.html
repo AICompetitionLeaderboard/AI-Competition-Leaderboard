@@ -201,8 +201,6 @@
   .medal.awc{background:linear-gradient(160deg,#ffb27a,#f2681f 55%,#c24608);color:#fff;font-family:'Segoe UI Symbol',system-ui,sans-serif;}
   .award-note{color:var(--muted);font-weight:600;font-size:.78rem;line-height:1.35;margin-top:6px;white-space:normal;max-width:300px;}
   .mtag{display:inline-flex;align-items:center;gap:4px;font-family:'Rajdhani';font-weight:700;font-size:.66rem;letter-spacing:.06em;text-transform:uppercase;color:#fff;background:linear-gradient(180deg,#f2681f,#c24608);border:1px solid rgba(240,120,60,.6);padding:3px 9px;border-radius:999px;box-shadow:0 3px 10px rgba(194,70,8,.35);}
-  .mc{color:#ff9a5a;font-weight:700;}
-  .bp{color:#b8a6ff;font-weight:700;}
 </style>
 </head>
 <body>
@@ -221,7 +219,7 @@
 
     <section id="view-champions" class="view active">
       <div class="champ-head">Winners' Circle</div>
-      <div class="champ-sub">Top five finishers · 20,000 recognition points</div>
+      <div class="champ-sub">Placement and special award · 20,000 recognition points</div>
       <div id="champs" class="champs"></div>
     </section>
 
@@ -300,11 +298,15 @@
   var finalRank = {}; ranked.forEach(function(t,i){ finalRank[t.num]=i+1; });
   var displayOrder = ranked.concat(withdrew);
 
-  var PERF={1:10000,2:5000,3:2000,4:2000,5:1000};
-  function perfOf(t){ return PERF[finalRank[t.num]]||0; }
-  function isWinner(t){ return !t.withdrew && finalRank[t.num]<=5; }
-  var TITLES={8:"Most Creative",6:"Best Prompt"};
-  function titleOf(t){ return TITLES[t.num]||null; }
+  var AWARDS={
+    12:{pts:10000,title:"Champion"},
+    14:{pts:5000,title:"Runner-Up"},
+    8:{pts:2000,title:"3rd place",creative:true},
+    4:{pts:2000,title:"4th place"},
+    6:{pts:1000,title:"Best Prompt"}
+  };
+  function awardOf(t){ return AWARDS[t.num]||null; }
+  function isWinner(t){ return !!AWARDS[t.num]; }
   function comma(n){ return n.toLocaleString("en-US"); }
 
   // movement baseline = end-of-Round-3 standings
@@ -318,23 +320,42 @@
   var PLACE={1:"1st place",2:"2nd place",3:"3rd place",4:"4th place",5:"5th place"};
 
   // ---- Champions ----
-  document.getElementById("champs").innerHTML = ranked.slice(0,5).map(function(t){
-    var r=finalRank[t.num];
-    var lab = r===1?"Champion":r===2?"Runner-Up":PLACE[r];
-    var tag = (t.num===8)?' <span class="mtag">★ Most Creative</span>':'';
-    return '<div class="cc rank-'+r+'">'
-      + '<div class="medal '+medalClass(r,false,true)+'">'+r+'</div>'
-      + '<div class="champ-main"><div class="lab">'+lab+'</div>'
-      +   '<div class="cname">'+(r===1?crownSVG:'')+t.name+tag+'</div>'
-      +   '<div class="cmem">'+(t.members||("Team "+t.num))+'</div></div>'
-      + '<div class="cright"><div class="cscore"><span data-to="'+cum(t)+'">0</span><small>/ 420 pts</small></div>'
-      +   '<div class="cpp">★ <span data-pp="'+perfOf(t)+'">0</span> recognition pts</div></div>'
-      + '</div>';
-  }).join("");
+  (function(){
+    var byNum={}; TEAMS.forEach(function(t){ byNum[t.num]=t; });
+    function placeCard(num,lab,cls,crown,tag){
+      var t=byNum[num], r=finalRank[num], a=AWARDS[num];
+      return '<div class="cc '+cls+'">'
+        + '<div class="medal '+medalClass(r,false,true)+'">'+r+'</div>'
+        + '<div class="champ-main"><div class="lab">'+lab+'</div>'
+        +   '<div class="cname">'+(crown?crownSVG:'')+t.name+(tag?(' '+tag):'')+'</div>'
+        +   '<div class="cmem">'+(t.members||("Team "+num))+'</div></div>'
+        + '<div class="cright"><div class="cscore"><span data-to="'+cum(t)+'">0</span><small>/ 420 pts</small></div>'
+        +   '<div class="cpp">★ <span data-pp="'+a.pts+'">0</span> recognition pts</div></div>'
+        + '</div>';
+    }
+    function awardCard(num,lab,cls,badgeCls,icon,right){
+      var t=byNum[num];
+      return '<div class="cc '+cls+'">'
+        + '<div class="medal '+badgeCls+'">'+icon+'</div>'
+        + '<div class="champ-main"><div class="lab">'+lab+'</div>'
+        +   '<div class="cname">'+t.name+'</div>'
+        +   '<div class="cmem">'+(t.members||("Team "+num))+'</div></div>'
+        + '<div class="cright">'+right+'</div>'
+        + '</div>';
+    }
+    var html='<div class="sec-label">Placement</div>';
+    html+=placeCard(12,"Champion","rank-1",true);
+    html+=placeCard(14,"Runner-Up","rank-2",false);
+    html+=placeCard(8,"3rd place","rank-3",false,'<span class="mtag">★ Most Creative</span>');
+    html+=placeCard(4,"4th place","rank-4",false);
+    html+='<div class="sec-label">Special Award</div>';
+    html+=awardCard(6,"Best Prompt","award-prompt","awp","★",'<div class="cpp">★ <span data-pp="1000">0</span> recognition pts</div>');
+    document.getElementById("champs").innerHTML=html;
+  })();
 
   // ---- Standings ----
   document.getElementById("standingsList").innerHTML = displayOrder.map(function(t){
-    var rank=finalRank[t.num], c=cum(t), win=isWinner(t);
+    var rank=finalRank[t.num], c=cum(t), win=isWinner(t), a=awardOf(t);
     var cls="row"+(win?" win":"")+(rank<=3&&!t.withdrew?(" top-"+rank):"")+(t.withdrew?" withdrew":"");
     var col = t.withdrew?'rgba(120,127,170,.4)':rank===1?'rgba(255,210,74,.55)':rank===2?'rgba(219,228,238,.4)':rank===3?'rgba(224,140,78,.45)':win?'rgba(255,210,74,.4)':'rgba(139,92,246,.5)';
     var mv=movement(t), mvHtml;
@@ -344,8 +365,7 @@
     else mvHtml='<span class="chip flat">—</span>';
     var meta;
     if(t.withdrew) meta='Team '+t.num+' · withdrew';
-    else if(rank<=5) meta='Team '+t.num+' · '+PLACE[rank]+(t.num===8?' · <span class="mc">★ Most Creative</span>':'')+' · <span class="pp">★ '+comma(perfOf(t))+' pts</span>';
-    else if(t.num===6) meta='Team '+t.num+' · <span class="bp">★ Best Prompt</span>';
+    else if(a) meta='Team '+t.num+' · '+a.title+(a.creative?' · Most Creative':'')+' · <span class="pp">★ '+comma(a.pts)+' pts</span>';
     else if(t.skipped4) meta='Team '+t.num+' · skipped Round 4';
     else meta='Team '+t.num;
     return '<div class="'+cls+'">'
